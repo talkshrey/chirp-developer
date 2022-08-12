@@ -1,8 +1,9 @@
 const isLoggedIn = (req, res, next) => {
-    if (req.user) {
-      next();
-    } else {
-      res.status(401).send('Not Logged In');
-    }
+  console.log(profile)
+  if (req.user) {
+    next()
+  } else {
+    res.status(401).send('Not Logged In')
   }
-  module.exports = isLoggedIn
+}
+module.exports = isLoggedIn
