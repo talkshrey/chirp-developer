@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'twitter',
     'rest_framework',
     'oauth2_provider',
+    'corsheaders',
 ]
 
 REST_FRAMEWORK = {
@@ -59,7 +60,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 ROOT_URLCONF = 'chirp.urls'
 
