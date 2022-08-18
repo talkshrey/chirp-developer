@@ -1,8 +1,11 @@
-from operator import concat
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
-from django.core import serializers
+from django.http import JsonResponse, HttpResponseRedirect
+from .serializers import LoginSerializer, RegisterSerializer
+from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from rest_framework.generics import GenericAPIView
+from django.contrib.auth import authenticate, login
+from .models import User
 import requests
 import base64
 import environ
@@ -27,18 +30,42 @@ def index(request):
     }
     response = requests.request("POST", url, headers=headers, data=payload)
     print(response.text)
-    return HttpResponse('Hello, World!')
+    return JsonResponse(response.json())
+
+def auth(request):
+    oauth = tweepy.OAuth1UserHandler(env('CONSUMER_KEY'), env('CONSUMER_SECRET'))
+    response = HttpResponseRedirect(oauth.get_authorization_url(True))
+    return response
+
+class RegisterAPI(GenericAPIView):
+	
+	serializer_class = RegisterSerializer
+	
+	def post(self,request,*args,**kwargs):
+		data = request.data
+		serializer = self.serializer_class(data=data)
+		serializer.is_valid(raise_exception = True)
+		user = serializer.save()
+		token = Token.objects.create(user=user)
+		return Response({'Success':'Your account is successfully created'},status=status.HTTP_201_CREATED)
 
 
-# class Auth():
-#     oauth = tweepy.OAuth1UserHandler(env('CONSUMER_KEY'), env('CONSUMER_SECRET'))
-#     auth_url = oauth.get_authorization_url(True)
-#     def search(request, query):
-#         print(oauth)
-#         api = tweepy.API(oauth)
+class LoginAPI(GenericAPIView):
+
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = User.objects.get(email=email)
+        # user = authenticate(request, username=email, password=password)
+
+        if user:
+            login(request, user)
+            token = Token.objects.get(user=user)
+            return Response({'token': token.key}, status=status.HTTP_200_OK)
         
-#         return HttpResponseRedirect(auth_url)
-
+        return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 def search(request, query):
     print(query)
@@ -50,7 +77,6 @@ def search(request, query):
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    # print(serializers.serialize('json', response.json()['data']))
 
     return JsonResponse(response.json())
 
